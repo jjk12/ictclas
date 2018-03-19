@@ -73,6 +73,7 @@ bool CSegGraph::GenerateWordNet(char *sSentence,CDictionary &dictCore,bool	bOrig
 	m_nAtomCount=0;
 	m_segGraph.SetEmpty();//Set segmentation graph empty
 
+	// 对句子进行原子切分
 	AtomSegment(sSentence);
 	//Atomic Segmentation
 
@@ -80,8 +81,10 @@ bool CSegGraph::GenerateWordNet(char *sSentence,CDictionary &dictCore,bool	bOrig
     {
 		if(m_nAtomPOS[i]==CT_CHINESE)//The atom is a Chinese Char
 		{
+			// 目前怀疑是训练模式用这个变量　初始化频率字段和原字符串
 			if(!bOriginalFreq)//Not original frequency
 				m_segGraph.SetElement(i,i+1,log(MAX_FREQUENCE),0);//init the link with the maximum value
+			//　目前还不懂为什么频率字段为０ 和位置
 			else
 				m_segGraph.SetElement(i,i+1,0,0,m_sAtom[i]);//init the link with the maximum value
 		}
@@ -129,6 +132,7 @@ bool CSegGraph::GenerateWordNet(char *sSentence,CDictionary &dictCore,bool	bOrig
 		}
     }
 	i=0;
+	// 看某个位格和它后面的位格是否能组成一个词汇
 	while(i<m_nAtomCount)//All the word
 	{
 	  strcpy(sWord,m_sAtom[i]);//Get the current atom
@@ -174,6 +178,9 @@ bool CSegGraph::GenerateWordNet(char *sSentence,CDictionary &dictCore,bool	bOrig
 	return true;
 }
 
+// 将字符串进行原子切分
+// 首先给原句按字划分,所有汉字一个一段,连续的字母,数字一段,比如"始##始张华平2006欢迎您asdf末##末"
+// 被划为"始##始/张/华/平/2006/欢/迎/您/asdf/末##末
 bool CSegGraph::AtomSegment(char *sSentence)
 {
     unsigned int i=0,j=0,nCurType,nNextType;	

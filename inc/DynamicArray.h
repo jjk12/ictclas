@@ -50,10 +50,20 @@
 //#define ROW_FIRST 0//Row first in the array store
 
 struct tagArrayChain{
+	// row记录该词的头位置
+	// col记录该词的末位置
 	unsigned int col,row;//row and column
+
+	//记录该词的-log(出现的概率),出现的频率指所有该词的所有词性下出现的概率的总和
     ELEMENT_TYPE value;//The value of the array
+
+    //记录该词的词性，比如人名标记为'nr'，则对应的nPos='n'*256+'r',如果该词有很多词性,则nPos=0
 	int nPOS;
+
+	//记录该词的长度
 	int nWordLen;
+
+	//记录该词
 	char *sWord;
 	//The possible POS of the word related to the segmentation graph
     struct tagArrayChain *next;

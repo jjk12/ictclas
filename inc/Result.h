@@ -43,7 +43,9 @@ public:
 
 public:
 	double m_dSmoothingPara;
+	//主要的分词处理是在Processing()方法里面发生的
 	bool Processing(char *sSentence,unsigned int nCount);
+	// 完成分词的整个处理过程，包括分词的词性标注.其中第一个参数为源字符串，第二个参数为分词后的字符串
 	bool ParagraphProcessing(const char *sParagraph,char *sResult);
 	bool FileProcessing(char *sFilename,char *sResultFile);
 	PWORD_RESULT *m_pResult;

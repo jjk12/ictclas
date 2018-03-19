@@ -60,10 +60,18 @@ public:
 	//bool	bOriginalFreq=false: output original frequency
 	CSegGraph();
 	virtual ~CSegGraph();
+
+	//记录原子串的内容
 	char m_sAtom[MAX_SENTENCE_LEN][WORD_MAXLENGTH];//pAtoms: the buffer for returned segmented atoms
 						// Such as a Chinese Char, digit, single byte, or delimiters
+
+	//　记录对应位置的原子串的内容的长度
 	int m_nAtomLength[MAX_SENTENCE_LEN];//Save the individual length of atom in the array
+
+	//　记录对应位置的原字符串类型
 	int m_nAtomPOS[MAX_SENTENCE_LEN];//pAtoms: the POS property 
+
+	// 句子的长度
 	unsigned int m_nAtomCount;//The count of atoms
 
 	CDynamicArray m_segGraph;	

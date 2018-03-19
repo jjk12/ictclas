@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <stdio.h>
+#include <iostream>
 
 #if defined(unix)
     #define _stricmp strcasecmp
@@ -80,19 +81,25 @@ bool CDictionary::Load(char *sFilename,bool bReset)
 {
    FILE *fp;
    int i,j,nBuffer[3];
+   //首先判断词典文件能否以二进制读取的方式打开
    if((fp=fopen(sFilename,"rb"))==NULL)
 	   return false;//fail while opening the file
    	
    //Release the memory for new files
+   //为新文件释放内存空间
    for( i=0;i<CC_NUM;i++)
 	{//delete the memory of word item array in the dictionary
 		for( j=0;j<m_IndexTable[i].nCount;j++)
 			delete m_IndexTable[i].pWordItemHead[j].sWord;
 		delete [] m_IndexTable[i].pWordItemHead;
 	}
+   //删除掉修改过的,可以先不管它
     DelModified();
+
+    //CC_NUM:6768,应该是 GB2312 编码中常用汉字的数目 6763 个加上 5 个空位码
    for(i=0;i<CC_NUM;i++)
    {
+	   //读取一个整形数字(词块的数目)
 	   fread(&(m_IndexTable[i].nCount),sizeof(int),1,fp);
        if(m_IndexTable[i].nCount>0)
 	     m_IndexTable[i].pWordItemHead=new WORD_ITEM[m_IndexTable[i].nCount];
@@ -102,13 +109,17 @@ bool CDictionary::Load(char *sFilename,bool bReset)
 		   continue;
 	   }
        j=0;
+       //根据前面读到的词块数目,循环读取一个个词块
 	   while(j<m_IndexTable[i].nCount)
 	   {
+		 //读取三字整数,分别为频度(Frequency)/词内容长度(WordLen)/句柄(Handle)
          fread(nBuffer,sizeof(int),3,fp);
          m_IndexTable[i].pWordItemHead[j].sWord=new char[nBuffer[1]+1];
+         //读取词内容
   		 if(nBuffer[1])//String length is more than 0
 		 {
 			 fread(m_IndexTable[i].pWordItemHead[j].sWord,sizeof(char),nBuffer[1],fp);
+			 std::cout<<m_IndexTable[i].pWordItemHead[j].sWord<<"	"<<nBuffer[0]<<"	"<<nBuffer[2]<<"	"<<nBuffer[1]<<std::endl;
 		 }
 		 m_IndexTable[i].pWordItemHead[j].sWord[nBuffer[1]]=0;
   	     if(bReset)//Reset the frequency

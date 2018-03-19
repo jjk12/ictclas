@@ -12,6 +12,7 @@
 //
 //////////////////////////////////////////////////////////////////////
 #include "Result.h"
+#include <iostream>
 
 #define DICT_FILE        "data/coreDict.dct"
 #define LEXICAL_FILE     "data/lexical.ctx"
@@ -74,7 +75,7 @@ CResult::CResult(const char * strDataPath)
 	m_uTransPerson.Configure(concatenate(strDataPath,TRANSPERSON_FILE),TT_TRANS_PERSON);
 	//Set the transliteration person recognition configure
 	
-	//0: 只切分不标注; 
+	//0: 只切分不标注;
 	//1: 上位标注;
 	//2: 为下位标注（更详细的标注类型）
 	m_nOperateType=2;//0:Only Segment;1: First Tag; 2:Second Type
@@ -300,7 +301,7 @@ bool CResult::Processing(char *sSentence,unsigned int nCount)
 	//Bigram segment
 	//进行二叉分词
 	//将传入的句子使用切分器m_Seg进行二元切分
-	//生成的结果会存储在m_Seg.m_pWordSeg中 
+	//生成的结果会存储在m_Seg.m_pWordSeg中
 	//结果个数存在      m_Seg.m_nSegmentCount中
 	m_Seg.BiSegment(sSentence, m_dSmoothingPara,m_dictCore,m_dictBigram,nCount);
 	
@@ -571,7 +572,7 @@ bool CResult::Adjust(PWORD_RESULT pItem,PWORD_RESULT pItemRet)
 			}
 		}
 		else if(pItem[i].nHandle==28280)
-		{//www/nx ./w sina/nx; ＥＩＭ/nx  -６０１/m 
+		{//www/nx ./w sina/nx; ＥＩＭ/nx  -６０１/m
 			strcpy(pItemRet[j].sWord,pItem[i].sWord);
 			pItemRet[j].nHandle=28280;
 			while(pItem[i+1].nHandle==28280||strstr(".．",pItem[i+1].sWord)||(pItem[i+1].nHandle==27904&&IsAllNum((unsigned char *)pItem[i+1].sWord)))
@@ -696,6 +697,8 @@ bool CResult::ParagraphProcessing(const char *sParagraph,char *sResult)
 	bool bFirstIgnore=true;
 	strcpy(sSentence,SENTENCE_BEGIN);//Add a sentence begin flag
 	//依次读入字符（可能是全角可能是半角，这个部分处理得不好，应该写一个函数来操作，否则代码变得很长）。
+
+	std::cout<<"-------------------------"<<sSentence<<std::endl;
 	while(nPosIndex<nParagraphLen)
 	{//Find a whole sentence which separated by ! . \n \r
 		sChar[0]=sParagraph[nPosIndex];//Get a char
@@ -730,6 +733,7 @@ bool CResult::ParagraphProcessing(const char *sParagraph,char *sResult)
 			{
 				strcat(sSentence,sChar);
 			}
+//			std::cout<<sSentence<<std::endl;
 			//对于已经生成的待处理句子串，如果非空也不是只有开始标记: 送入Processing进行处理
 			if(sSentence[0]!=0&&strcmp(sSentence,SENTENCE_BEGIN)!=0)
 			{

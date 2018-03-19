@@ -216,7 +216,7 @@ bool CSegment::GenerateWord(int **nSegRoute, int nIndex)
 				}
      			else
 				{
-					//早晨/t  五点/t 
+					//早晨/t  五点/t
 					if(strcmp(m_pWordSeg[nIndex][k].sWord+strlen(m_pWordSeg[nIndex][k].sWord)-2,"点")==0)
 					{
 						strcpy(sCurWord,"未##时");
@@ -365,14 +365,20 @@ bool CSegment::BiGraphGenerate(CDynamicArray &aWord, CDynamicArray &aBinaryWordN
 	//nWordIndex: the index number of current word
 	double dCurFreqency,dValue,dTemp;
 	char sTwoWords[WORD_MAXLENGTH];
+
+	// 获取链表的长度
 	m_nWordCount=aWord.GetTail(&pTail);//Get tail element and return the words count
 	if(m_npWordPosMapTable)
 	{//free buffer
 		delete [] m_npWordPosMapTable;
 		m_npWordPosMapTable=0;
 	}
+
+	//分配一个数组,存贮图二中每个结点的词的位置,如下图四所示
 	if(m_nWordCount>0)//Word count is greater than 0
 		m_npWordPosMapTable=new int[m_nWordCount];//Record the  position of possible words
+
+	//把指针指向当前链表的开头,并计算每个词的位置,然后把它放到数组中
 	pCur=aWord.GetHead();
 	while(pCur!=NULL)//Set the position map of words
 	{
@@ -380,6 +386,7 @@ bool CSegment::BiGraphGenerate(CDynamicArray &aWord, CDynamicArray &aBinaryWordN
 		pCur=pCur->next;
 	}
 
+	//遍历所有的结点,并计算相临两个词之间的平滑值
 	pCur=aWord.GetHead();
 	while(pCur!=NULL)//
 	{
@@ -387,16 +394,23 @@ bool CSegment::BiGraphGenerate(CDynamicArray &aWord, CDynamicArray &aBinaryWordN
 			dCurFreqency=pCur->value;
 		else//Unknown words
 			dCurFreqency=DictCore.GetFrequency(pCur->sWord,2);
+
+		//取得和当前结点列值(col)相同的下个结点
 		aWord.GetElement(pCur->col,-1,pCur,&pNextWords);//Get next words which begin with pCur->col
 		while(pNextWords&&pNextWords->row==pCur->col)//Next words
 		{	
+			//前后两个词用@分隔符连接起来
 			//Current words frequency
 			strcpy(sTwoWords,pCur->sWord);
 			strcat(sTwoWords,WORD_SEGMENTER);
 			strcat(sTwoWords,pNextWords->sWord);
+
+			//计算两个连接词的边长
 			nTwoWordsFreq=DictBinary.GetFrequency(sTwoWords,3);
 			//Two linked Words frequency
 			dTemp=(double)1/MAX_FREQUENCE;
+
+			//计算平滑值
 			//Smoothing
 			dValue=-log(dSmoothingPara*(1+dCurFreqency)/(MAX_FREQUENCE+80000)+(1-dSmoothingPara)*((1-dTemp)*nTwoWordsFreq/(1+dCurFreqency)+dTemp));
 			//-log{a*P(Ci-1)+(1-a)P(Ci|Ci-1)} Note 0<a<1
@@ -406,6 +420,8 @@ bool CSegment::BiGraphGenerate(CDynamicArray &aWord, CDynamicArray &aBinaryWordN
 			//Get the position index of current word in the position map table
 			nCurWordIndex=BinarySearch(pCur->row*MAX_SENTENCE_LEN+pCur->col,m_npWordPosMapTable,m_nWordCount);
 			nNextWordIndex=BinarySearch(pNextWords->row*MAX_SENTENCE_LEN+pNextWords->col,m_npWordPosMapTable,m_nWordCount);
+
+			//把当前结点在位置表中的位置和下个结点在位置表中的位置及平滑值/词性插入到二叉链表中
 			aBinaryWordNet.SetElement(nCurWordIndex,nNextWordIndex,dValue,pCur->nPOS);
 			pNextWords=pNextWords->next;//Get next word
 		}
@@ -414,6 +430,10 @@ bool CSegment::BiGraphGenerate(CDynamicArray &aWord, CDynamicArray &aBinaryWordN
 	return true;
 }
 
+//进行二叉分词
+//将传入的句子使用切分器m_Seg进行二元切分
+//生成的结果会存储在m_Seg.m_pWordSeg中
+//结果个数存在      m_Seg.m_nSegmentCount中
 bool CSegment::BiSegment(char *sSentence, double dSmoothingPara, CDictionary &dictCore, CDictionary &dictBinary, unsigned int nResultCount)
 {
 	int **nSegRoute;//The segmentation route
@@ -425,13 +445,20 @@ bool CSegment::BiSegment(char *sSentence, double dSmoothingPara, CDictionary &di
 		nSegRoute[i]=new int[nLen/2];
 		memset(nSegRoute[i],-1,nLen/2*sizeof(int));
 	}
+
+	// 进行原子切分　生成网络
  	m_graphSeg.GenerateWordNet(sSentence,dictCore,true);//Generate words array
     CDynamicArray aBiwordsNet;
+
+    // 生成一个二叉图表
 	BiGraphGenerate(m_graphSeg.m_segGraph,aBiwordsNet,dSmoothingPara,dictBinary,dictCore);
     //Generate the biword link net
     
+	//调用构造函数,生成一个二维链表,如下图一所示。每个链表节点是一个队列，数据结构如下图二所示
 	CNShortPath sp(&aBiwordsNet,nResultCount);
+	//最短路径算法实现
 	sp.ShortPath();
+	//输出最短路径
 	sp.Output(nSegRoute,false,&m_nSegmentCount);
 	
 
